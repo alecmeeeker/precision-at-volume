@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Precision at Volume</title>
+<meta name="description" content="An essay on the design quality of Porto Rocha: its ethos, its standard, and what specifically makes the work good.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F1EEE6">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131311">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cstyle%3Epath%7Bfill:%23141412%7D@media (prefers-color-scheme:dark)%7Bpath%7Bfill:%23EFECE4%7D%7D%3C/style%3E%3Crect y='99.5' width='100.5' height='100.5' fill='%23E8390E'/%3E%3Cpath d='M0 100A100 100 0 0 1 200 100A100 100 0 0 1 100 200V100Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Two families, two separate requests: if one fails, the other still loads. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,12..72,300..600;1,12..72,300..600&amp;display=swap">
+<script>document.documentElement.className += ' js';</script>
+<style>
+/* ------------------------------------------------------------------
+   Tokens. One signal color. Everything else is paper and ink.
+   ------------------------------------------------------------------ */
+:root{
+  --paper:#F1EEE6;
+  --ink:#141412;
+  --mute:#5F5B53;            /* 5.8:1 on paper */
+  --rule:rgba(20,20,18,.16);
+  --signal:#E8390E;          /* 3.6:1 on paper: large type and graphics only */
+  --foil:#DFDBD1;
+  --display:"Bricolage Grotesque","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  --text:"Newsreader","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --gutter:clamp(16px,4vw,56px);
+  --gap:clamp(16px,2.2vw,32px);
+  --measure:34em;
+  --ease:cubic-bezier(.7,0,.2,1);
+  color-scheme:light dark;
+}
+/* Dark mode is designed, not inverted: the signal is re-tuned for a dark ground. */
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#131311;
+    --ink:#EFECE4;
+    --mute:#A39E94;          /* 7.0:1 on dark paper */
+    --rule:rgba(239,236,228,.16);
+    --signal:#FF5A2E;        /* 6.0:1 on dark paper */
+    --foil:#23221F;
+  }
+  body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--text);
+  font-size:clamp(1.0625rem,.96rem + .4vw,1.3125rem);
+  line-height:1.55;
+  font-kerning:normal;
+  font-optical-sizing:auto;
+}
+.page{overflow-x:clip}
+.wrap{max-width:1440px;margin-inline:auto;padding-inline:var(--gutter)}
+::selection{background:var(--signal);color:#000}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ------------------------------------------------------------------
+   Masthead
+   ------------------------------------------------------------------ */
+.masthead{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:10px 24px;padding-block:16px;border-bottom:1px solid var(--rule);
+  font:500 .75rem/1.25 var(--display);letter-spacing:.08em;text-transform:uppercase;
+}
+.mm{display:inline-flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.06em}
+.mm svg{width:28px;height:28px;flex:none;display:block}
+.mm-meta{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0;padding:0;list-style:none;color:var(--mute)}
+
+/* ------------------------------------------------------------------
+   Hero. The mark is set into the title line like a letter.
+   ------------------------------------------------------------------ */
+.hero{padding-block:clamp(36px,8vw,112px) clamp(48px,8vw,112px)}
+.title{
+  margin:0;
+  font-family:var(--display);
+  font-weight:760;
+  font-size:clamp(3.25rem,16vw,14rem);
+  line-height:.84;
+  letter-spacing:-.04em;
+  font-stretch:80%;
+}
+.title>span{display:block}
+.title .l2{white-space:nowrap}
+.title em{
+  font-family:var(--text);font-style:italic;font-weight:400;
+  font-size:.28em;letter-spacing:0;font-stretch:100%;
+}
+.title .flex{font-stretch:80%}
+/* The flex runs only once the variable face has actually loaded (see script). */
+.fonts-ready .title .flex.go{animation:flex 2.4s cubic-bezier(.65,0,.35,1) both}
+@keyframes flex{
+  0%{font-stretch:80%}
+  28%{font-stretch:75%}
+  68%{font-stretch:100%}
+  100%{font-stretch:80%}
+}
+.hm{display:inline-block;width:.68em;height:.68em;margin-left:.08em;vertical-align:baseline}
+.hm .q,.hm .sq{transform-box:fill-box}
+.hm .q{transform-origin:50% 50%}
+.hm .sq{transform-origin:100% 0}
+/* The mark assembles: three quarter turns, one square. Then a seamless underlay. */
+@media (prefers-reduced-motion:no-preference){
+  .hm .q{animation:qturn .8s var(--ease) .25s both}
+  .hm .q2{animation-delay:.37s}
+  .hm .q3{animation-delay:.49s}
+  .hm .sq{animation:grow .55s var(--ease) .78s both}
+  .hm .under{animation:show 0s linear 1.36s both}
+}
+@keyframes qturn{from{transform:rotate(-90deg)}to{transform:rotate(0deg)}}
+@keyframes grow{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes show{from{opacity:0}to{opacity:1}}
+
+.hero-foot{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--gap);row-gap:32px;margin-top:clamp(32px,6vw,80px);align-items:end;
+}
+.dek{
+  grid-column:1/8;margin:0;
+  font-size:clamp(1.25rem,.9rem + 1.3vw,2.125rem);line-height:1.22;
+  font-style:italic;font-weight:400;max-width:20em;text-wrap:balance;
+}
+.toc{grid-column:9/13}
+.toc p{margin:0 0 10px;font:600 .75rem/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.toc ol{
+  margin:0;padding:0;list-style:none;
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;
+  column-gap:var(--gap);
+  font:500 .9375rem/1.2 var(--display);
+}
+.toc li{border-top:1px solid var(--rule)}
+.toc a{display:flex;gap:10px;padding:10px 0;color:var(--ink);text-decoration:none}
+.toc a span{font-variant-numeric:tabular-nums;color:var(--mute);min-width:1.4em}
+.toc a:hover{text-decoration:underline;text-decoration-color:var(--signal);text-decoration-thickness:2px;text-underline-offset:4px}
+@media (max-width:960px){.dek,.toc{grid-column:1/-1}}
+
+/* ------------------------------------------------------------------
+   Sections: a twelve-column grid. Content starts at column four.
+   ------------------------------------------------------------------ */
+.sec{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--gap);
+  padding-block:clamp(56px,9vw,128px);border-top:1px solid var(--rule);
+}
+.sec-label{grid-column:1/4;align-self:start}
+.sec-body{grid-column:4/13;min-width:0}
+.sn{
+  display:block;font-family:var(--display);font-weight:720;
+  font-size:clamp(2.75rem,6vw,6rem);line-height:.8;letter-spacing:-.04em;font-stretch:80%;
+  font-variant-numeric:tabular-nums;color:var(--signal);
+}
+.sec-name{display:block;margin-top:14px;font:500 .75rem/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+@media (max-width:960px){
+  .sec-label{grid-column:1/-1;display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+  .sec-name{margin-top:0}
+  .sec-body{grid-column:1/-1}
+}
+
+.sec-body p{margin:0 0 1em;max-width:var(--measure);text-wrap:pretty}
+@media (max-width:600px){.sec-body p{-webkit-hyphens:auto;hyphens:auto}}
+h2{
+  margin:0 0 .75em;font-family:var(--display);font-weight:720;
+  font-size:clamp(2.125rem,1.2rem + 3.8vw,4.25rem);line-height:.95;letter-spacing:-.03em;font-stretch:84%;
+  max-width:13em;text-wrap:balance;
+}
+h3{
+  margin:2.2em 0 .5em;font-family:var(--display);font-weight:650;
+  font-size:clamp(1.25rem,1.05rem + .7vw,1.75rem);line-height:1.1;letter-spacing:-.015em;font-stretch:92%;
+  text-wrap:balance;
+}
+h3 .tn{display:inline-block;min-width:1.4em;font-variant-numeric:tabular-nums;color:var(--mute)}
+.sec-body .lede{
+  margin:0;max-width:23em;
+  font-size:clamp(1.375rem,.95rem + 1.6vw,2.375rem);line-height:1.26;letter-spacing:-.006em;
+}
+/* The one rule broken on purpose: pull lines start at column two. */
+.sec-body .pull{
+  margin:1.2em 0;max-width:15em;
+  font-family:var(--display);font-weight:720;
+  font-size:clamp(1.875rem,1rem + 3.6vw,4.25rem);line-height:.96;letter-spacing:-.03em;font-stretch:80%;
+  color:var(--signal);text-wrap:balance;-webkit-hyphens:none;hyphens:none;
+}
+@media (min-width:961px){
+  .sec-body .pull{margin-left:calc((100% + var(--gap)) * -2 / 9)}
+}
+
+/* Paired lists: habits, and the colophon's claims and decisions. */
+.pairs{margin:2em 0 0;padding:0;border-top:2px solid var(--ink)}
+.pairs>div,.pairs-head{
+  display:grid;grid-template-columns:minmax(0,13em) minmax(0,var(--measure));gap:6px var(--gap);
+}
+.pairs>div{padding:20px 0 22px;border-bottom:1px solid var(--rule)}
+.pairs dt{font-family:var(--display);font-weight:650;font-size:1.1875rem;line-height:1.2;letter-spacing:-.01em;font-stretch:92%}
+.pairs dd{margin:0}
+.pairs-head{margin-top:2em;padding:10px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+.pairs-head span{font:600 .75rem/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.pairs-head + .pairs{margin-top:0;border-top:0}
+@media (max-width:760px){
+  .pairs>div{grid-template-columns:minmax(0,1fr)}
+  .pairs-head{display:none}
+  .pairs-head + .pairs{border-top:2px solid var(--ink)}
+}
+.sec-body .note{margin-top:2.5em;padding-top:1em;border-top:1px solid var(--rule);font-size:.9em;color:var(--mute)}
+
+/* ------------------------------------------------------------------
+   Exhibits
+   ------------------------------------------------------------------ */
+.exhibit{margin:clamp(36px,5vw,64px) 0;padding-top:14px;border-top:2px solid var(--ink)}
+.exhibit figcaption{margin-top:18px;max-width:44em;font:400 .875rem/1.5 var(--display);color:var(--mute)}
+.exhibit figcaption b{display:block;margin-bottom:4px;font-weight:650;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+
+/* A: the foil. Deliberately generic, deliberately colorless. */
+.foil{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;padding-top:6px}
+.foil div{
+  display:flex;align-items:center;justify-content:center;gap:.45em;
+  aspect-ratio:16/10;padding:0 1em;border-radius:22px;background:var(--foil);color:var(--mute);
+  font:600 clamp(1.05rem,.9rem + .6vw,1.375rem)/1.1 ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  letter-spacing:-.02em;text-align:center;
+}
+.foil div::before{content:"";flex:none;width:.85em;height:.85em;border-radius:50%;background:currentColor;opacity:.6}
+@media (max-width:600px){.foil div{aspect-ratio:3/1}}
+
+/* B: the scale test. */
+.scale{display:flex;flex-wrap:wrap;align-items:flex-end;gap:24px clamp(28px,6vw,72px);padding-top:10px}
+.scale div{display:flex;flex-direction:column;gap:12px}
+.scale svg{display:block}
+.scale span{font:500 .75rem/1 var(--display);letter-spacing:.06em;font-variant-numeric:tabular-nums;color:var(--mute)}
+
+/* C: the grammar. */
+.grammar{display:none;width:100%;height:auto;background:var(--paper);outline:1px solid var(--rule)}
+.js .grammar{display:block}
+.grammar .bg{shape-rendering:crispEdges;transition:fill .35s ease}
+.grammar .rot{transform-box:fill-box;transform-origin:50% 50%;transition:transform .55s var(--ease)}
+.grammar .fg{transform-box:fill-box;transform-origin:50% 50%;transition:transform .2s ease,opacity .2s ease,fill .35s ease}
+.grammar .fg.out{transform:scale(.25);opacity:0}
+.f-ink{fill:var(--ink)}
+.f-paper{fill:var(--paper)}
+.f-signal{fill:var(--signal)}
+@media (prefers-reduced-motion:reduce){.grammar *{transition:none !important}}
+
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.controls[hidden]{display:none}
+.btn{
+  -webkit-appearance:none;appearance:none;min-height:44px;padding:0 18px;
+  border:1.5px solid var(--ink);border-radius:0;background:var(--ink);color:var(--paper);
+  font:600 .9375rem/1 var(--display);letter-spacing:.005em;cursor:pointer;
+}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:hover{background:var(--signal);border-color:var(--signal);color:#000}
+.sec-body .count{margin:0 0 0 auto;font:500 .875rem/1.3 var(--display);font-variant-numeric:tabular-nums;color:var(--mute)}
+.count strong{color:var(--ink);font-weight:650}
+@media (max-width:560px){.sec-body .count{flex-basis:100%;margin-left:0}}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px var(--gap);margin-top:28px}
+.sec-body .rules p{margin:0 0 6px;font:600 .75rem/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.rules ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--rule);font:400 .9375rem/1.4 var(--display)}
+.rules li{padding:8px 0;border-bottom:1px solid var(--rule)}
+
+/* ------------------------------------------------------------------
+   Footer
+   ------------------------------------------------------------------ */
+.foot{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px 24px;padding-block:40px 56px;border-top:1px solid var(--rule)}
+.foot svg{width:44px;height:44px;flex:none;display:block}
+.foot p{margin:0;max-width:40em;font:400 .875rem/1.5 var(--display);color:var(--mute)}
+
+@media print{
+  :root{--paper:#fff;--ink:#000;--mute:#333;--rule:#bbb;--signal:#E8390E}
+  .controls,.toc{display:none}
+  .sec{padding-block:28px}
+}
+</style>
+</head>
+<body>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <symbol id="mark" viewBox="0 0 200 200">
+    <rect x="0" y="99.5" width="100.5" height="100.5" style="fill:var(--signal)"/>
+    <path d="M0 100A100 100 0 0 1 200 100A100 100 0 0 1 100 200V100Z" style="fill:var(--ink)"/>
+  </symbol>
+</svg>
+
+<div class="page">
+
+<header class="wrap">
+  <div class="masthead">
+    <span class="mm"><svg width="28" height="28" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><use href="#mark"/></svg>Precision at Volume</span>
+    <ul class="mm-meta">
+      <li>Design criticism</li>
+      <li>Porto Rocha, New York</li>
+      <li id="rt">12 min read</li>
+    </ul>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1 class="title"><span class="l1">Precision</span> <span class="l2"><em>at </em><span class="flex">Volume</span><svg class="hm" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><path class="under" style="fill:var(--ink)" d="M0 100A100 100 0 0 1 200 100A100 100 0 0 1 100 200V100Z"/><rect class="sq" style="fill:var(--signal)" x="0" y="100" width="100" height="100"/><g class="q q1"><path style="fill:var(--ink)" transform="rotate(180 50 50)" d="M0 0H100A100 100 0 0 1 0 100Z"/></g><g class="q q2"><path style="fill:var(--ink)" transform="translate(100 0) rotate(270 50 50)" d="M0 0H100A100 100 0 0 1 0 100Z"/></g><g class="q q3"><path style="fill:var(--ink)" transform="translate(100 100)" d="M0 0H100A100 100 0 0 1 0 100Z"/></g></svg></span></h1>
+  <div class="hero-foot">
+    <p class="dek">Porto Rocha and the case for treating expression as an engineering problem.</p>
+    <nav class="toc" aria-label="Sections">
+      <p>Contents</p>
+      <ol>
+        <li><a href="#s0"><span>00</span>Thesis</a></li>
+        <li><a href="#s1"><span>01</span>The trade</a></li>
+        <li><a href="#s2"><span>02</span>The ethos</a></li>
+        <li><a href="#s3"><span>03</span>The standard</a></li>
+        <li><a href="#s4"><span>04</span>The detail</a></li>
+        <li><a href="#s5"><span>05</span>The objection</a></li>
+        <li><a href="#s6"><span>06</span>The point</a></li>
+        <li><a href="#s7"><span>07</span>This page</a></li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<main id="essay" class="wrap">
+
+  <section class="sec" id="s0" aria-label="Thesis">
+    <div class="sec-label" aria-hidden="true"><span class="sn">00</span><span class="sec-name">Thesis</span></div>
+    <div class="sec-body">
+      <p class="lede">Most brand design of the past decade made a trade. It gave up character in exchange for consistency, on the theory that an identity with nothing distinctive in it could never be implemented wrong. Porto Rocha’s work rejects the trade. Its argument, made in type, form and motion, is that expression is not the opposite of system. Expression is what a well-built system produces. Nearly everything good about the studio follows from taking that idea literally, and so does nearly everything difficult about it.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s1" aria-labelledby="h1-trade">
+    <div class="sec-label" aria-hidden="true"><span class="sn">01</span><span class="sec-name">The trade</span></div>
+    <div class="sec-body">
+      <h2 id="h1-trade">Safe everywhere, memorable nowhere</h2>
+      <p>For years a familiar identity kept arriving. A lowercase geometric sans-serif. One friendly color, usually a blue or a violet. Rounded corners on everything. An illustration style of flat figures with long limbs and small heads. Critics named the condition “blanding,” and the word lasted because the condition was real.</p>
+      <p>The logic behind it was not foolish. Screens are small, products ship every week, and an identity has to survive being implemented by hundreds of people who will never meet the designers who made it. A neutral system is easy to implement and hard to break. That is a genuine virtue, and it deserves to be stated plainly before it is criticized.</p>
+      <p>The cost is that a system which cannot break has usually been made unbreakable by removing every element capable of carrying meaning: the odd letterform, the color that is slightly too much, the shape that only makes sense for one company. What survives is safe in every application and memorable in none. Remove the names and the identities are interchangeable, which is the plainest available definition of failure for something whose entire job is to be told apart.</p>
+
+      <figure class="exhibit">
+        <div class="foil" aria-hidden="true">
+          <div>a startup</div>
+          <div>another startup</div>
+          <div>a third startup</div>
+        </div>
+        <figcaption><b>Exhibit&nbsp;A. The swap test, failed</b>Three hypothetical identities, drawn for this page. Remove the names and they are one identity. This is roughly what a system optimized only for not breaking looks like.</figcaption>
+      </figure>
+
+      <p>The standard reaction to blanding is the opposite mistake: the expressive one-off. A launch with a spectacular hero image, a typeface chosen because it photographs well, a film that exists exactly once. It is beautiful in the case study and gone within a year, because nothing in it was designed to be repeated by anyone else. Blanding sacrifices expression to buy reliability. The one-off sacrifices reliability to buy expression. Both are answers to the wrong question.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s2" aria-labelledby="h2-ethos">
+    <div class="sec-label" aria-hidden="true"><span class="sn">02</span><span class="sec-name">The ethos</span></div>
+    <div class="sec-body">
+      <h2 id="h2-ethos">An identity is a grammar, not a picture</h2>
+      <p>Porto Rocha is a design and brand studio in New York, founded by the designers Leo Porto and Felipe Rocha and named for the two of them. Its premise is legible in the work itself: an identity is a grammar, and the logo is one sentence written in it. The design problem is not to make that sentence beautiful. It is to make the grammar good enough that people who are not the designers can write new sentences in it, and that every one of those sentences still sounds unmistakably like the brand.</p>
+      <p>That premise relocates the designer’s responsibility. In an identity built around a picture, the designer owns the hero moment, and everything after it is someone else’s problem. In an identity built as a grammar, the designer owns the rules: which forms exist, how they may combine, what the type does when it is forced into a mobile header, what the color is permitted to mean, how anything arrives on a screen and how it leaves. Expression stops being a finish applied at the end and becomes a property of the rules. If the rules are good, the expression is reliable. If the rules are bad, no amount of finishing will rescue them.</p>
+      <p>Read across the studio’s portfolio, that expression tends to live in three places. The choice of those three places is the ethos in its practical form.</p>
+
+      <h3>Type first</h3>
+      <p>In much of Porto Rocha’s work, typography is the primary carrier of voice rather than a neutral container for it: custom or substantially modified letterforms, scale contrast pushed hard, words treated as image. This is a structural decision before it is a stylistic one. Type is the only brand element present in every application, from a building sign to a push notification. Put the character in the type and the character is present everywhere by default, including in the places nobody remembered to design.</p>
+
+      <h3>Motion as a native state</h3>
+      <p>Many identities are designed as still images and animated afterward, which is why so much brand motion looks like a logo being slid around a screen. The stronger approach, and the one this studio’s work repeatedly points toward, gives the system behavior from the start: rules for how its parts arrive, transform and leave. A brand that lives mostly on screens lives mostly in time. Designing it as a still image is designing for the exception.</p>
+
+      <h3>Form derived, not borrowed</h3>
+      <p>The third place is graphic form: the shapes, patterns and devices that surround the type. At its best this form is derived from something specific to the client rather than borrowed from the current repertoire, which gives the system a reason to look the way it does. A derived form can be explained in a sentence. A borrowed one can only be defended by saying that it looks good, and looking good is the cheapest property a design can have.</p>
+
+      <p class="pull" aria-hidden="true">Looking good is the cheapest property a design can have.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s3" aria-labelledby="h2-standard">
+    <div class="sec-label" aria-hidden="true"><span class="sn">03</span><span class="sec-name">The standard</span></div>
+    <div class="sec-body">
+      <h2 id="h2-standard">Three tests the work has to pass</h2>
+      <p>A studio’s quality standard is not whatever it says it values. It is the set of tests a piece of work must pass before it leaves the building. Read backward from Porto Rocha’s work, the standard can be stated as three tests. The formulation is mine, not the studio’s; the work passes them often enough that they are worth writing down.</p>
+
+      <h3><span class="tn">1</span>The hundredth application</h3>
+      <p>Does the system still hold the hundredth time it is used, at its smallest size, in someone else’s hands? The first application of an identity is designed. The hundredth is implemented: by an in-house team on a deadline, by a partner agency, by an engineer building a settings screen at the end of a sprint. Most identities are judged by their first application because that is the one in the case study. A serious identity is judged by its hundredth, because that is the one most people will actually see.</p>
+
+      <figure class="exhibit">
+        <div class="scale" aria-hidden="true">
+          <div><svg width="16" height="16" viewBox="0 0 200 200" focusable="false"><use href="#mark"/></svg><span>16&nbsp;px</span></div>
+          <div><svg width="32" height="32" viewBox="0 0 200 200" focusable="false"><use href="#mark"/></svg><span>32&nbsp;px</span></div>
+          <div><svg width="64" height="64" viewBox="0 0 200 200" focusable="false"><use href="#mark"/></svg><span>64&nbsp;px</span></div>
+          <div><svg width="128" height="128" viewBox="0 0 200 200" focusable="false"><use href="#mark"/></svg><span>128&nbsp;px</span></div>
+        </div>
+        <figcaption><b>Exhibit&nbsp;B. The scale test</b>This page’s own mark at four sizes, from favicon to display. The smallest is the same drawing as the largest. Nothing was simplified to make it hold.</figcaption>
+      </figure>
+
+      <h3><span class="tn">2</span>Time</h3>
+      <p>Does it make sense in motion, not only in stills? The question is not whether the identity can be animated; anything can be animated. The question is whether the motion follows from the same logic as the static form, closely enough that someone who had only ever seen the motion could reconstruct the logo from it. When that is true, motion stops being decoration and becomes a second way of stating the same idea.</p>
+
+      <h3><span class="tn">3</span>The swap</h3>
+      <p>Could this identity belong to anyone else? Remove the name. If the system could be handed to a competitor unchanged, it has failed, however well it is finished. Blanding fails this test by design. The expressive one-off fails it by accident, because a style chosen for its beauty is usually a style that would be equally beautiful on somebody else.</p>
+
+      <p class="pull" aria-hidden="true">The first application is designed. The hundredth is implemented.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s4" aria-labelledby="h2-detail">
+    <div class="sec-label" aria-hidden="true"><span class="sn">04</span><span class="sec-name">The detail</span></div>
+    <div class="sec-body">
+      <h2 id="h2-detail">What, specifically, makes it good</h2>
+      <p>The tests describe a floor. What lifts work above the floor is a set of habits at the scale of detail, in the places where an average studio stops and a good one keeps going. In my reading these habits are what separate Porto Rocha’s strongest work from competent work in the same idiom. Every one of them is learnable, which is why the work rewards study and not only admiration.</p>
+
+      <dl class="pairs">
+        <div>
+          <dt>Scale contrast with a reason</dt>
+          <dd>Very large type beside very small type, with little in between. The middle sizes are where hierarchy goes soft. Committing to extremes forces a decision on every surface about what matters most, and that decision is the hierarchy.</dd>
+        </div>
+        <div>
+          <dt>One rule broken on purpose</dt>
+          <dd>A strict structure with exactly one element allowed to break it. The break is legible only because everything else obeys. An identity that breaks every rule has no rules left to break, and its gestures stop registering as gestures.</dd>
+        </div>
+        <div>
+          <dt>Wit that comes from the system</dt>
+          <dd>The best surprises in a good identity are not added. They are found: the moment the grammar produces a sentence nobody planned. Surprise that the system can reproduce is a feature. Surprise that depends on one designer’s inspired afternoon is an accident, and accidents do not scale.</dd>
+        </div>
+        <div>
+          <dt>Finish nobody asked for</dt>
+          <dd>Spacing corrected by eye at the smallest size. A round letter allowed to overshoot a flat edge so that the two look aligned. A motion curve that eases in and out instead of sliding at constant speed. A dark mode designed rather than inverted. None of these is visible on its own. Together they are the difference between work that is considered and work that only looks expensive.</dd>
+        </div>
+      </dl>
+
+      <p style="margin-top:2em">The principle is easier to see than to describe, so here is a deliberately small grammar. Press the button as many times as you like.</p>
+
+      <figure class="exhibit">
+        <svg class="grammar" id="grammar" viewBox="0 0 600 400" width="600" height="400" role="img" aria-label="A generated grid of six by four square tiles. Each tile holds a shape cut from a circle or a square, in ink, paper or the signal color.">
+          <defs><clipPath id="tc"><rect x="-0.5" y="-0.5" width="101" height="101"/></clipPath></defs>
+        </svg>
+        <noscript><p>This exhibit composes itself with JavaScript, which is switched off. The essay does not depend on it.</p></noscript>
+        <div class="controls" hidden>
+          <button class="btn" type="button" id="recompose">Recompose</button>
+          <button class="btn ghost" type="button" id="jump">Jump to No.&nbsp;100</button>
+          <p class="count" aria-live="polite" aria-atomic="true">Composition <strong id="num">001</strong><span id="note"></span></p>
+        </div>
+        <div class="rules">
+          <div>
+            <p>Never changes</p>
+            <ul>
+              <li>A grid of six by four</li>
+              <li>Three colors: paper, ink, signal</li>
+              <li>Signal on exactly three tiles, never touching</li>
+              <li>Every shape cut from a circle or a square</li>
+            </ul>
+          </div>
+          <div>
+            <p>Always changes</p>
+            <ul>
+              <li>Which shape each tile holds</li>
+              <li>Which way each shape faces</li>
+              <li>Where the signal lands</li>
+              <li>Which tiles are ink and which are paper</li>
+            </ul>
+          </div>
+        </div>
+        <figcaption><b>Exhibit&nbsp;C. A grammar in miniature</b>Built for this page; it is not a Porto Rocha system and imitates none. The rules under “never changes” hold in every composition, and the rest varies freely. Each composition is different and each is recognizably the same system, which is this essay’s entire claim at the scale of a toy. Composition 100 is the one that matters.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec" id="s5" aria-labelledby="h2-objection">
+    <div class="sec-label" aria-hidden="true"><span class="sn">05</span><span class="sec-name">The objection</span></div>
+    <div class="sec-body">
+      <h2 id="h2-objection">Loud is also a period style</h2>
+      <p>There is a fair objection, and an essay that skips it is advocacy. Expressive systems date. Big grotesques, kinetic type and saturated color are, among other things, the look of a particular period, and period styles harden into their own kind of sameness. A studio with a recognizable hand runs the risk that its clients begin to resemble one another instead of themselves. That would be blanding again, at a higher volume.</p>
+      <p>The objection is right about the risk and wrong about where the defense lies. The defense is not restraint. It is derivation. The swap test applies to a studio as much as to its clients: a system that could move from one of the studio’s clients to another without modification fails the same test blanding fails, whoever’s hand it shows. Expression built from a client’s specific substance ages the way a well-made object ages. Expression built from a studio’s repertoire ages like a trend. The standard is the instrument that tells the two apart, and it has to be applied hardest to a studio’s own favorite moves.</p>
+      <p>Whether a given project clears that bar is a judgment to make one project at a time, with the work in front of you. The claim here is narrower: the bar exists, the best of the work is organized around it, and it is the right bar.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s6" aria-labelledby="h2-point">
+    <div class="sec-label" aria-hidden="true"><span class="sn">06</span><span class="sec-name">The point</span></div>
+    <div class="sec-body">
+      <h2 id="h2-point">Precision is the half nobody sees</h2>
+      <p>The usual vocabulary of design quality, words like clean, bold and timeless, describes how work looks. Porto Rocha’s work argues for a vocabulary that describes how work behaves. Does it hold at sixteen pixels? Does it make sense in time? Does it belong to this client and no other? Can it be handed to strangers and survive them?</p>
+      <p>Expression is the visible half of the answer. Precision is what makes the expression repeatable, and it is mostly invisible: it lives in rules, tolerances and corrections that no presentation will ever show. Plenty of work achieves one half. Bland work is precise and silent. One-off work is loud and fragile. The work worth studying achieves both at once, which is much harder than either alone, and the harder half is the one nobody sees.</p>
+      <p>That is the standard. This page tries to meet it, and the next section says how, so the argument can be checked against the page instead of taken on trust.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s7" aria-labelledby="h2-page">
+    <div class="sec-label" aria-hidden="true"><span class="sn">07</span><span class="sec-name">This page</span></div>
+    <div class="sec-body">
+      <h2 id="h2-page">How this page argues</h2>
+      <p>An essay about precision that is imprecise about itself undermines its own argument. Each claim above corresponds to a decision below, and each decision can be checked in the page source.</p>
+
+      <div class="pairs-head" aria-hidden="true"><span>The claim</span><span>The decision</span></div>
+      <dl class="pairs">
+        <div>
+          <dt>Type carries the voice.</dt>
+          <dd>Two families. Bricolage Grotesque does the shouting and uses its width axis as part of the hierarchy. Newsreader does the reading. The only other type on the page is the generic system font in Exhibit&nbsp;A, which is there to fail.</dd>
+        </div>
+        <div>
+          <dt>The loudest color is the most restricted.</dt>
+          <dd>One signal color. It appears in the section numbers, the two pull lines, the mark wherever it appears, the tiles of Exhibit&nbsp;C, and interaction states: link and button hovers, text selection, keyboard focus. It never sets running text, where its contrast against the paper would be too low for comfortable reading.</dd>
+        </div>
+        <div>
+          <dt>One rule broken on purpose.</dt>
+          <dd>Inside the numbered sections, on wide screens, every heading, paragraph and exhibit starts at the fourth of twelve columns. The two pull lines alone start at the second.</dd>
+        </div>
+        <div>
+          <dt>Motion follows the logic of the form.</dt>
+          <dd>Three things move, and none of them loops. The mark assembles from three quarter turns and one square. The exhibit’s tiles turn in quarter turns and exchange shapes in place. The last word of the title flexes along its width axis once, again when you point at the title, and only if the typeface that gives the flex its meaning has loaded. If your system asks for reduced motion, nothing moves.</dd>
+        </div>
+        <div>
+          <dt>The hundredth application decides.</dt>
+          <dd>The mark in the masthead, the footer and the browser tab is the same drawing as the mark in the title, at 28 pixels, 44 pixels and favicon size. The page is built to hold at 320 pixels wide without sideways scrolling, to keep its hierarchy in system fonts if the web fonts fail, and to have a dark mode with its own signal color rather than an inversion.</dd>
+        </div>
+        <div>
+          <dt>Wit comes from the system.</dt>
+          <dd>Composition 100. It obeys exactly the same rules as composition 1. The only thing that makes it special is the argument.</dd>
+        </div>
+      </dl>
+
+      <p class="note">A note on sources. This essay names no clients and no projects, deliberately. It was written from general knowledge of the studio’s public work, without reference material at hand, and an argument about precision should not rest on half-remembered specifics. Its factual claims about Porto Rocha are limited to what kind of studio it is, who founded it and where it is based. Everything else is interpretation and is offered as such. The exhibits were drawn for this page and reproduce none of the studio’s work.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <svg width="44" height="44" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><use href="#mark"/></svg>
+    <p>Precision at Volume. An essay on Porto Rocha. Set in Bricolage Grotesque and Newsreader. If this sentence is in your system’s fonts, the web fonts did not load, and the page was designed to hold anyway.</p>
+  </div>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* Reading time, computed from the essay itself rather than asserted. */
+  var essay = document.getElementById('essay');
+  var rt = document.getElementById('rt');
+  if (essay && rt) {
+    var words = essay.textContent.trim().split(/\s+/).length;
+    rt.textContent = Math.max(1, Math.round(words / 230)) + ' min read';
+  }
+
+  /* Title flex: only when the variable face has genuinely loaded.
+     document.fonts.load resolves with the faces it found; an empty list
+     means the web font is absent, so the fallback is left still. */
+  var title = document.querySelector('.title');
+  var flex = document.querySelector('.title .flex');
+  var busy = false;
+  function play() {
+    if (!flex || reduce || busy || !root.classList.contains('fonts-ready')) return;
+    busy = true;
+    flex.classList.remove('go');
+    void flex.offsetWidth;
+    flex.classList.add('go');
+  }
+  if (flex) flex.addEventListener('animationend', function () { busy = false; });
+  if (document.fonts && document.fonts.load && window.Promise) {
+    var wait = new Promise(function (res) { setTimeout(function () { res([]); }, 3000); });
+    Promise.race([document.fonts.load('760 1em "Bricolage Grotesque"'), wait]).then(function (faces) {
+      if (faces && faces.length) {
+        root.classList.add('fonts-ready');
+        play();
+        if (title) title.addEventListener('pointerenter', play);
+      }
+    }, function () {});
+  }
+
+  /* Exhibit C: a grammar in miniature. */
+  var svg = document.getElementById('grammar');
+  if (!svg) return;
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var COLS = 6, ROWS = 4, N = COLS * ROWS, ACC = 3;
+  var SHAPES = {
+    none: 'M0 0',
+    quarter: 'M0 0H100A100 100 0 0 1 0 100Z',
+    half: 'M0 0H100A50 50 0 0 1 0 0Z',
+    circle: 'M0 50A50 50 0 1 0 100 50A50 50 0 1 0 0 50Z',
+    leaf: 'M0 100A100 100 0 0 1 100 0A100 100 0 0 1 0 100Z',
+    bar: 'M0 0H100V50H0Z'
+  };
+  var WEIGHTS = [['quarter', 30], ['half', 16], ['circle', 12], ['leaf', 12], ['bar', 14], ['none', 16]];
+  var tiles = [];
+
+  function el(name, attrs) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var g = el('g', { 'transform': 'translate(' + c * 100 + ' ' + r * 100 + ')', 'clip-path': 'url(#tc)' });
+      var bg = el('rect', { 'x': '-0.5', 'y': '-0.5', 'width': '101', 'height': '101', 'class': 'bg f-paper' });
+      var rot = el('g', { 'class': 'rot' });
+      var fg = el('path', { 'd': 'M0 0', 'class': 'fg f-ink' });
+      rot.appendChild(el('rect', { 'width': '100', 'height': '100', 'fill': 'none' }));
+      rot.appendChild(fg);
+      g.appendChild(bg);
+      g.appendChild(rot);
+      svg.appendChild(g);
+      tiles.push({ r: r, c: c, bg: bg, rot: rot, fg: fg, turn: 0, shape: 'none', fill: 'ink' });
+    }
+  }
+
+  /* Seeded, so composition 100 is always the same composition 100. */
+  function rng(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function compose(n) {
+    var rand = rng(n * 7919 + 104729), i, j, k, tmp;
+    var order = [];
+    for (i = 0; i < N; i++) order.push(i);
+    for (i = N - 1; i > 0; i--) { j = Math.floor(rand() * (i + 1)); tmp = order[i]; order[i] = order[j]; order[j] = tmp; }
+    /* Invariant: signal on exactly three tiles, none touching, diagonals included. */
+    var acc = [];
+    for (i = 0; i < N && acc.length < ACC; i++) {
+      k = order[i];
+      var ok = true;
+      for (j = 0; j < acc.length; j++) {
+        if (Math.abs(Math.floor(acc[j] / COLS) - Math.floor(k / COLS)) < 2 && Math.abs(acc[j] % COLS - k % COLS) < 2) { ok = false; break; }
+      }
+      if (ok) acc.push(k);
+    }
+    var spec = [];
+    for (i = 0; i < N; i++) {
+      var x = rand() * 100, s = 'none', sum = 0;
+      for (j = 0; j < WEIGHTS.length; j++) { sum += WEIGHTS[j][1]; if (x < sum) { s = WEIGHTS[j][0]; break; } }
+      var b = rand() < 0.5 ? 'paper' : 'ink';
+      var f = b === 'paper' ? 'ink' : 'paper';
+      if (acc.indexOf(i) > -1) {
+        if (s === 'none' || rand() < 0.45) { f = b; b = 'signal'; } else { f = 'signal'; }
+      }
+      spec.push({ s: s, b: b, f: f, q: Math.floor(rand() * 4) });
+    }
+    return spec;
+  }
+
+  function apply(spec, animate) {
+    tiles.forEach(function (t, i) {
+      var s = spec[i];
+      function go() {
+        t.bg.setAttribute('class', 'bg f-' + s.b);
+        /* Always turn forward, by whole quarter turns. */
+        var d = (s.q - (t.turn % 4) + 4) % 4;
+        t.turn += d;
+        t.rot.style.transitionDuration = animate ? (0.3 + 0.14 * d) + 's' : '0s';
+        t.rot.style.transform = 'rotate(' + t.turn * 90 + 'deg)';
+        if (t.shape === s.s && t.fill === s.f) return;
+        t.shape = s.s;
+        t.fill = s.f;
+        if (!animate) {
+          t.fg.setAttribute('d', SHAPES[s.s]);
+          t.fg.setAttribute('class', 'fg f-' + s.f);
+          return;
+        }
+        t.fg.classList.add('out');
+        setTimeout(function () {
+          t.fg.setAttribute('d', SHAPES[t.shape]);
+          t.fg.setAttribute('class', 'fg out f-' + t.fill);
+          t.fg.getBoundingClientRect();
+          t.fg.classList.remove('out');
+        }, 200);
+      }
+      if (animate) setTimeout(go, (t.r + t.c) * 45); else go();
+    });
+  }
+
+  var n = 1;
+  var num = document.getElementById('num');
+  var note = document.getElementById('note');
+  function label() {
+    num.textContent = n < 1000 ? ('00' + n).slice(-3) : String(n);
+    note.textContent = n === 100 ? ' \u2014 the hundredth application. Same rules as the first.' : '';
+  }
+
+  apply(compose(n), false);
+  label();
+
+  var controls = document.querySelector('.controls');
+  if (controls) controls.hidden = false;
+
+  document.getElementById('recompose').addEventListener('click', function () {
+    n += 1;
+    apply(compose(n), !reduce);
+    label();
+  });
+  document.getElementById('jump').addEventListener('click', function () {
+    if (n === 100) return;
+    n = 100;
+    apply(compose(n), !reduce);
+    label();
+  });
+})();
+</script>
+</body>
+</html>
